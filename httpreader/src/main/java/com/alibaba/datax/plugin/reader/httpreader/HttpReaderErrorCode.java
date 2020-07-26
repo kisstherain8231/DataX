@@ -1,14 +1,16 @@
-package com.alibaba.datax.plugin.reader.mysqlreader;
+package com.alibaba.datax.plugin.reader.httpreader;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-public enum MysqlReaderErrorCode implements ErrorCode {
+public enum HttpReaderErrorCode implements ErrorCode {
+
+
     ;
 
     private final String code;
     private final String description;
 
-    private MysqlReaderErrorCode(String code, String description) {
+    private HttpReaderErrorCode(String code, String description) {
         this.code = code;
         this.description = description;
     }

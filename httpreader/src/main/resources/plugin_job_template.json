@@ -1,0 +1,25 @@
+{
+  "name": "httpreader",
+  "parameter": {
+    "column": [
+      {
+        "name": "",
+        "type": ""
+      }
+    ],
+    "connection": [
+      {
+        "httpUrl": "",
+        "httpMethod": "",
+        "successCode": "",
+        "requestParam": [
+          {
+            "name": "",
+            "value": "",
+            "type":""
+          }
+        ]
+      }
+    ]
+  }
+}
