@@ -3,9 +3,13 @@ package com.alibaba.datax.plugin.reader.httpreader;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -29,18 +33,6 @@ public class HttpReader extends Reader {
             this.jobConfig = super.getPluginJobConf();
             this.jobConfig = super.getPluginJobConf();
 
-            List<Object> conns = jobConfig.getList(Key.CONNECTION,
-                Object.class);
-
-            for (int i = 0, len = conns.size(); i < len; i++) {
-                Configuration connConf = Configuration
-                    .from(conns.get(i).toString());
-
-                String url = connConf.getString(Key.HTTPURL);
-
-                this.jobConfig.set(Key.HTTPURL, url);
-            }
-            //
             restTemplate = new RestTemplate();
         }
 
@@ -84,34 +76,46 @@ public class HttpReader extends Reader {
         public void prepare() {
         }
 
+        /**
+         *  引入动态数据转换方式，对数据源的每行数据进行转换
+         *
+         * @param recordSender
+         */
         @Override
         public void startRead(RecordSender recordSender) {
             String url = configuration.getString(Key.HTTPURL);
-            LOG.info(String.format("reading url : [%s]", url));
 
+            LOG.info(String.format("reading url : [%s]", url));
             ResponseEntity<String> result = restTemplate.getForEntity(url, String.class);
             LOG.info(String.format("reading result : [%s]", result));
 
-            List<Configuration> columns = this.configuration
-                .getListConfiguration(Key.COLUMN);
+            JSONObject data = (JSONObject) JSON.parse(result.getBody());
+            String dataJsonPath = configuration.getString(Key.DATAJSONPATH);
+            JSONArray jsonArray = (JSONArray) data.get(dataJsonPath);
 
-            Record record = recordSender.createRecord();
-
-            for (Configuration eachColumnConf : columns) {
-                String name = eachColumnConf.getString(Key.NAME);
-                String type = eachColumnConf.getString(Key.TYPE);
-
-                LOG.info(String.format("conf  column name : [%s]", name));
-                LOG.info(String.format("conf  column type : [%s]", type));
+            JSONArray columnMeta = JSON.parseArray(configuration.getString(Key.COLUMN));
+            for (Object row : jsonArray) {
+                Record record = recordSender.createRecord();
+                try {
+                    final JSONObject item = JSON.parseObject(String.valueOf(row));
+                    for (Object column : columnMeta) {
+                        Object columnName = ((JSONObject) column).getString(Key.NAME);
+                        Object columnType = ((JSONObject) column).getString(Key.TYPE);
+                        record.addColumn(ColumnTypeEnum.valueOf(String.valueOf(columnType).
+                            toUpperCase()).getColumnValue(item, columnName));
+                    }
+                } catch (Exception e) {
+                    if (e instanceof DataXException) {
+                        super.getTaskPluginCollector().collectDirtyRecord(record, e);
+                        LOG.error("数据采集发生异常", e);
+                        throw (DataXException) e;
+                    }
+                }
+                recordSender.sendToWriter(record);
             }
-            Column column = new StringColumn("hello word");
 
-            record.addColumn(column);
-
-            recordSender.sendToWriter(record);
             LOG.info("Finished read record by Sql: [{}\n] {}.",
                 url);
-
         }
 
         @Override

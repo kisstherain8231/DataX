@@ -14,4 +14,6 @@ public class Key {
 
     public static final String TYPE = "type";
 
+    public static final String DATAJSONPATH = "dataJsonPath";
+
 }
