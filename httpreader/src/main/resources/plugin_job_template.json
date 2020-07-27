@@ -1,24 +1,22 @@
 {
   "name": "httpreader",
   "parameter": {
+    "httpUrl": "",
+    "httpMethod": "",
+    "requestParam": [
+      {
+        "name": "",
+        "value": "",
+        "type": ""
+      }
+    ],
+    "successCode": "",
+    "successCodeJsonPath":"",
+    "dataJsonPath":"",
     "column": [
       {
         "name": "",
         "type": ""
-      }
-    ],
-    "connection": [
-      {
-        "httpUrl": "",
-        "httpMethod": "",
-        "successCode": "",
-        "requestParam": [
-          {
-            "name": "",
-            "value": "",
-            "type":""
-          }
-        ]
       }
     ]
   }
